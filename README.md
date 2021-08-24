@@ -43,7 +43,7 @@ async def register_tweet_listener():
     
     twitter_user = await twit.get_user(username='TLDRNewsUK')
     callback = new_tweet
-    twit.register_new_tweet_listener(twitter_user, callback)
+    twit.create_tweet_listener(twitter_user, callback)
 
 
 if __name__ == '__main__':

@@ -37,7 +37,7 @@ class Twtsc:
         self.token = Token()
         self.token.refresh()
         self.logger = get_logger()
-        self.listeners: dict[str, Listener] = {}
+        self.listeners: dict[User, Listener] = {}
 
     def get_user_agent(self, tweet_search: bool = False):
         try:
@@ -58,12 +58,13 @@ class Twtsc:
 
                 return resp
 
-    def register_new_tweet_listener(self, user: User, callback: Union[Callable, Awaitable], *, interval: int = 60):
+    def create_tweet_listener(self, user: User, callback: Union[Callable, Awaitable], *, interval: int = 60):
         if not self.loop.is_running():
             raise NotImplementedError('Registering a new tweet listener currently requires a running event loop')
 
         listener = Listener(self, user, callback, interval=interval)
         self.loop.create_task(listener.runner())
+        self.listeners[user] = listener
 
     async def search_user_tweets(
             self, user: User, limit: int = 100, *,
@@ -107,6 +108,10 @@ class Twtsc:
         response = await self.make_request(url_query, headers=_headers)
         tweets_data = json.loads(response)
         tweets = parse_tweets_data(tweets_data)
+
+        for tweet in tweets:
+            tweet.user = user
+
         return tweets
 
     async def get_user(self, *, username: str = None, user_id: str = None) -> Optional[User]:

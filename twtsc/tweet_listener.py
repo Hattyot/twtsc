@@ -24,6 +24,8 @@ class Listener:
 
     def stop(self):
         self.stop_event.set()
+        if self.user in self.twtsc:
+            del self.twtsc.listeners[self.user]
 
     async def runner(self):
         while not self.stop_event.is_set():

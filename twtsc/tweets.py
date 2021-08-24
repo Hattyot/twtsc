@@ -1,6 +1,7 @@
 import datetime
 import json
 from time import strftime, localtime
+from twitter_user import User
 
 Tweet_formats = {
     'datetime': '%Y-%m-%d %H:%M:%S %Z',
@@ -45,7 +46,9 @@ def _get_reply_to(tw):
 
 
 class Tweet:
-    def __init__(self, tweet_data: dict):
+    def __init__(self, tweet_data: dict, *, user: User = None):
+        self.user = user
+
         self.id = int(tweet_data['id_str'])
         self.conversation_id = tweet_data["conversation_id_str"]
 
@@ -127,6 +130,14 @@ class Tweet:
         except KeyError:
             # means that the quoted tweet have been deleted
             self.quote_url = 0
+
+    def __eq__(self, other):
+        if type(other) == str:
+            return other == str(self.id)
+        if type(other) == int:
+            return other == int(self.id)
+        if type(other) == Tweet:
+            return other.id == self.id
 
     def __str__(self):
         return f'<Tweet {self.id}>'

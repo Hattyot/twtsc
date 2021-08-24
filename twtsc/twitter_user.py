@@ -57,6 +57,14 @@ class User:
         # link to user account
         self.link = f'https://twitter.com/{self.username}'
 
+    def __eq__(self, other):
+        if type(other) == str:
+            return other == self.username or other == str(self.id)
+        if type(other) == int:
+            return other == int(self.id)
+        if type(other) == User:
+            return other.id == self.id
+
 
 User_formats = {
     'join_date': '%Y-%m-%d',
