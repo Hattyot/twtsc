@@ -16,3 +16,4 @@ USER_AGENT_LIST = [
 ]
 
 BEARER = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA'
+SEARCH_URL = "https://api.twitter.com/2/search/adaptive.json"
