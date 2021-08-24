@@ -1,0 +1,1 @@
+Simple twitter scraper inspired and based on [twint](https://github.com/twintproject/twint)
