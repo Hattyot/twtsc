@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name="balance_snapshotter",
+    name="twtsc",
     version="0.0.2",
     author="Hattyot",
     description="Simple twitter scraper inspired and based on twint",
