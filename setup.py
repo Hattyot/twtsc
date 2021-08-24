@@ -9,7 +9,7 @@ setuptools.setup(
     project_urls={
         "Bug Tracker": "https://github.com/Hattyot/twtsc/issues"
     },
-    package_dir={"": "twtsc"},
-    packages=setuptools.find_packages(where="twtsc"),
+    package_dir={"": "src"},
+    packages=setuptools.find_packages(where="src"),
     python_requires=">=3.9",
 )

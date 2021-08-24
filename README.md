@@ -12,6 +12,7 @@ git clone https://github.com/Hattyot/twtsc.git
 pip3 install -e twtsc
 ```
 ## Examples
+
 ```python
 import asyncio
 from twtsc import Twtsc
@@ -40,7 +41,7 @@ async def register_tweet_listener():
         print(tweets)
 
     twit = Twtsc()
-    
+
     twitter_user = await twit.get_user(username='TLDRNewsUK')
     callback = new_tweet
     twit.create_tweet_listener(twitter_user, callback)
