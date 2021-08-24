@@ -105,13 +105,13 @@ class Tweet:
             self.retweet = True
             self.retweet_id = tweet_data['retweet_data']['retweet_id']
             self.retweet_date = tweet_data['retweet_data']['retweet_date']
-            self.user_rt = tweet_data['retweet_data']['user_rt']
+            self.rt_text = tweet_data['retweet_data']['rt_text']
             self.user_rt_id = tweet_data['retweet_data']['user_rt_id']
         except KeyError:
             self.retweet = False
             self.retweet_id = ''
             self.retweet_date = ''
-            self.user_rt = ''
+            self.rt_text = ''
             self.user_rt_id = ''
 
         try:
@@ -162,7 +162,7 @@ def parse_tweets_data(tweets_data) -> list[Tweet]:
                 _dt = str(_dt.strftime(Tweet_formats['datetime']))
                 tweet_data['retweet_data'] = {
                     'user_rt_id': tweets_data['globalObjects']['tweets'][rt_id]['user_id_str'],
-                    'user_rt': tweets_data['globalObjects']['tweets'][rt_id]['full_text'],
+                    'rt_text': tweets_data['globalObjects']['tweets'][rt_id]['full_text'],
                     'retweet_id': rt_id,
                     'retweet_date': _dt,
                 }
