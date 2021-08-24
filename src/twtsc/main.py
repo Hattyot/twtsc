@@ -1,10 +1,7 @@
-import asyncio
 import random
 import json
 import aiohttp
 import logging
-import datetime
-import uuid
 
 from tweet_listener import Listener
 from tweets import parse_tweets_data, Tweet
@@ -68,10 +65,36 @@ class Twtsc:
 
     async def search_user_tweets(
             self, user: User, limit: int = 100, *,
-            search_text: str = None, until: int = None, since: int = None, exclude_retweets: bool = False
+            search_text: str = None, until: int = None, since: int = None, exclude_retweets: bool = False,
+            only_retweets: bool = False
     ) -> list[Tweet]:
+        tweets_data = await self._search_request(
+            user, limit, search_text=search_text, until=until, since=since, exclude_retweets=exclude_retweets,
+            only_retweets=only_retweets
+        )
+        tweets = parse_tweets_data(tweets_data)
+
+        # if retweets have not been exluded and only_retweets isnt true, include retweets in tweet list
+        # yes this is stupid and ii hate it too
+        if not exclude_retweets and not only_retweets:
+            user_retweets = await self._search_request(
+                user, limit, search_text=search_text, until=until, since=since, only_retweets=True
+            )
+            retweets = parse_tweets_data(user_retweets)
+            tweets = tweets + retweets
+
+        tweets = sorted(tweets, key=lambda tweet: -tweet.unix_timestamp)[:limit]
+
+        return tweets[::-1]
+
+    async def _search_request(
+            self, user: User, limit: int = 100, *,
+            search_text: str = None, until: int = None, since: int = None, exclude_retweets: bool = False,
+            only_retweets: bool = False
+    ) -> dict:
         params = [
             ('include_can_media_tag', '1'),
+            ('include_want_retweets', '1'),
             ('include_ext_alt_text', 'true'),
             ('include_quote_count', 'true'),
             ('include_reply_count', '1'),
@@ -95,7 +118,9 @@ class Twtsc:
         if since:
             query += f' since:{since}'
         if exclude_retweets:
-            query += f' exclude:nativeretweets exclude:retweets'
+            query += f' -filter:quote -filter:retweets'
+        if only_retweets:
+            query += f' +filter:nativeretweets'
 
         params.append(('q', query))
         url_query = SEARCH_URL + "?" + urlencode(params, quote_via=quote)
@@ -106,13 +131,8 @@ class Twtsc:
         }
 
         response = await self.make_request(url_query, headers=_headers)
-        tweets_data = json.loads(response)
-        tweets = parse_tweets_data(tweets_data)
+        return json.loads(response)
 
-        for tweet in tweets:
-            tweet.user = user
-
-        return tweets
 
     async def get_user(self, *, username: str = None, user_id: str = None) -> Optional[User]:
         if username:
@@ -134,3 +154,24 @@ class Twtsc:
             return User(user_data)
         except Exception as e:
             self.logger.exception(f'Error fetching user: {e}')
+
+
+import asyncio
+
+async def get_user_tweets():
+    twit = Twtsc()
+
+    twitter_user = await twit.get_user(username='TLDRNewsUK')
+    # twitter_user = await twit.get_user(user_id='892125759963312128')
+
+    user_tweets = await twit.search_user_tweets(twitter_user, limit=5)
+    for tweet in user_tweets:
+        print(json.dumps(tweet.__dict__, indent=2))
+
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+
+    loop.create_task(get_user_tweets())
+
+    loop.run_forever()

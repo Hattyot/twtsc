@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="twtsc",
-    version="0.0.2",
+    version="0.0.3",
     author="Hattyot",
     description="Simple twitter scraper inspired and based on twint",
     url="https://github.com/Hattyot/twtsc",
