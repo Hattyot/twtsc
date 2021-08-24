@@ -2,14 +2,15 @@ import random
 import json
 import aiohttp
 import logging
+import asyncio
 
-from tweet_listener import Listener
-from tweets import parse_tweets_data, Tweet
+from .tweet_listener import Listener
+from .tweets import parse_tweets_data, Tweet
 from urllib.parse import quote, urlencode
 from fake_useragent import UserAgent
 from static import USER_AGENT_LIST, BEARER, SEARCH_URL
-from twitter_user import User
-from guest_token import Token
+from .twitter_user import User
+from .guest_token import Token
 from typing import Union, Optional, Callable, Awaitable
 
 
@@ -80,6 +81,9 @@ class Twtsc:
             user_retweets = await self._search_request(
                 user, limit, search_text=search_text, until=until, since=since, only_retweets=True
             )
+
+            print(json.dumps(user_retweets, indent=2))
+
             retweets = parse_tweets_data(user_retweets)
             tweets = tweets + retweets
 
@@ -151,27 +155,6 @@ class Twtsc:
         try:
             response = await self.make_request(request_url, headers=_headers)
             user_data = json.loads(response)
-            return User(user_data)
+            return User(self, user_data)
         except Exception as e:
             self.logger.exception(f'Error fetching user: {e}')
-
-
-import asyncio
-
-async def get_user_tweets():
-    twit = Twtsc()
-
-    twitter_user = await twit.get_user(username='TLDRNewsUK')
-    # twitter_user = await twit.get_user(user_id='892125759963312128')
-
-    user_tweets = await twit.search_user_tweets(twitter_user, limit=5)
-    for tweet in user_tweets:
-        print(json.dumps(tweet.__dict__, indent=2))
-
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-
-    loop.create_task(get_user_tweets())
-
-    loop.run_forever()

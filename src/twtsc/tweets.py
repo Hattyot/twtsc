@@ -1,7 +1,6 @@
 import datetime
-import json
 from time import strftime, localtime
-from twitter_user import User, BasicUser
+from .twitter_user import User, BasicUser
 
 Tweet_formats = {
     'datetime': '%Y-%m-%d %H:%M:%S %Z',

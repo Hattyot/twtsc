@@ -1,6 +1,6 @@
 import asyncio
 
-from twitter_user import User
+from .twitter_user import User
 from typing import Callable, Union, Awaitable
 import inspect
 import time

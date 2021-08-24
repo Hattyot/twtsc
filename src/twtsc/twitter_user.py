@@ -25,10 +25,12 @@ class BasicUser:
 
 
 class User:
-    def __init__(self, user_data: dict):
+    def __init__(self, twtsc, user_data: dict):
         if 'data' not in user_data and 'user' not in user_data['data']:
             msg = 'malformed json! cannot be parsed to get user data'
             raise Exception(msg)
+
+        self.twtsc = twtsc
 
         self.id = user_data['data']['user']['rest_id']
 
