@@ -30,13 +30,6 @@ def get_logger():
     return logging.LoggerAdapter(logger, {'session': 1})
 
 
-def _sanitizeQuery(_url, params):
-    _serialQuery = ""
-    _serialQuery = urlencode(params, quote_via=quote)
-    _serialQuery = _url + "?" + _serialQuery
-    return _serialQuery
-
-
 class Twtsc:
     def __init__(self, loop=None):
         self.loop = loop if loop else asyncio.get_event_loop()
@@ -104,7 +97,7 @@ class Twtsc:
             query += f' exclude:nativeretweets exclude:retweets'
 
         params.append(('q', query))
-        url_query = _sanitizeQuery(SEARCH_URL, params)
+        url_query = SEARCH_URL + "?" + urlencode(params, quote_via=quote)
 
         _headers = {
             'authorization': BEARER,
@@ -136,25 +129,3 @@ class Twtsc:
             return User(user_data)
         except Exception as e:
             self.logger.exception(f'Error fetching user: {e}')
-
-
-def new_tweet(Tweets: list[Tweet]):
-    print(Tweets)
-
-
-async def main():
-    twit = Twtsc()
-
-    twitter_user = await twit.get_user(username='TLDRNewsUK')
-    print(twitter_user.link)
-
-    user_tweets = await twit.search_user_tweets(twitter_user, limit=5)
-    print(user_tweets)
-
-    twit.register_new_tweet_listener(twitter_user, new_tweet)
-
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.run_forever()
