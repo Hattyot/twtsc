@@ -4,13 +4,16 @@ import json
 import aiohttp
 import logging
 import datetime
+import uuid
 
-from tweets import Tweets
+from tweet_listener import Listener
+from tweets import parse_tweets_data, Tweet
 from urllib.parse import quote, urlencode
 from fake_useragent import UserAgent
 from static import USER_AGENT_LIST, BEARER, SEARCH_URL
 from twitter_user import User
 from guest_token import Token
+from typing import Union, Optional, Callable, Awaitable
 
 
 def get_logger():
@@ -27,13 +30,6 @@ def get_logger():
     return logging.LoggerAdapter(logger, {'session': 1})
 
 
-def _formatDate(date):
-    try:
-        return int(datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S").timestamp())
-    except ValueError:
-        return int(datetime.datetime.strptime(date, "%Y-%m-%d").timestamp())
-
-
 def _sanitizeQuery(_url, params):
     _serialQuery = ""
     _serialQuery = urlencode(params, quote_via=quote)
@@ -42,11 +38,13 @@ def _sanitizeQuery(_url, params):
 
 
 class Twtsc:
-    def __init__(self):
+    def __init__(self, loop=None):
+        self.loop = loop if loop else asyncio.get_event_loop()
+
         self.token = Token()
         self.token.refresh()
-
         self.logger = get_logger()
+        self.listeners: dict[str, Listener] = {}
 
     def get_user_agent(self, tweet_search: bool = False):
         try:
@@ -67,10 +65,17 @@ class Twtsc:
 
                 return resp
 
+    def register_new_tweet_listener(self, user: User, callback: Union[Callable, Awaitable], *, interval: int = 60):
+        if not self.loop.is_running():
+            raise NotImplementedError('Registering a new tweet listener currently requires a running event loop')
+
+        listener = Listener(self, user, callback, interval=interval)
+        self.loop.create_task(listener.runner())
+
     async def search_user_tweets(
             self, user: User, limit: int = 100, *,
-            search_text: str = None, until: str = None, since: str = None, exclude_retweets: bool = False
-    ) -> Tweets:
+            search_text: str = None, until: int = None, since: int = None, exclude_retweets: bool = False
+    ) -> list[Tweet]:
         params = [
             ('include_can_media_tag', '1'),
             ('include_ext_alt_text', 'true'),
@@ -92,9 +97,9 @@ class Twtsc:
         if search_text:
             query += f' {search_text}'
         if until:
-            query += f' until:{_formatDate(until)}'
+            query += f' until:{until}'
         if since:
-            query += f' since:{_formatDate(since)}'
+            query += f' since:{since}'
         if exclude_retweets:
             query += f' exclude:nativeretweets exclude:retweets'
 
@@ -108,10 +113,10 @@ class Twtsc:
 
         response = await self.make_request(url_query, headers=_headers)
         tweets_data = json.loads(response)
-        tweets = Tweets(tweets_data)
+        tweets = parse_tweets_data(tweets_data)
         return tweets
 
-    async def get_user(self, *, username: str = None, user_id: str = None) -> User:
+    async def get_user(self, *, username: str = None, user_id: str = None) -> Optional[User]:
         if username:
             url_values = quote(json.dumps({'screen_name': username, 'withHighlightedLabel': False}))
             request_url = f'https://api.twitter.com/graphql/jMaTS-_Ea8vh9rpKggJbCQ/UserByScreenName?variables={url_values}'
@@ -133,6 +138,10 @@ class Twtsc:
             self.logger.exception(f'Error fetching user: {e}')
 
 
+def new_tweet(Tweets: list[Tweet]):
+    print(Tweets)
+
+
 async def main():
     twit = Twtsc()
 
@@ -140,9 +149,12 @@ async def main():
     print(twitter_user.link)
 
     user_tweets = await twit.search_user_tweets(twitter_user, limit=5)
-    print(user_tweets.all_tweets)
+    print(user_tweets)
+
+    twit.register_new_tweet_listener(twitter_user, new_tweet)
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    loop.create_task(main())
+    loop.run_forever()

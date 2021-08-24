@@ -1,4 +1,5 @@
 import datetime
+import json
 from time import strftime, localtime
 
 Tweet_formats = {
@@ -48,9 +49,9 @@ class Tweet:
         self.id = int(tweet_data['id_str'])
         self.conversation_id = tweet_data["conversation_id_str"]
 
-        # parsing date to user-friendly format
         _dt = tweet_data['created_at']
         _dt = datetime.datetime.strptime(_dt, '%a %b %d %H:%M:%S %z %Y')
+        self.unix_timestamp = _dt.timestamp()
 
         self.tweet_text = tweet_data['full_text']
         self.lang = tweet_data['lang']
@@ -134,46 +135,39 @@ class Tweet:
         return f'<Tweet {self.id}>'
 
 
-class Tweets:
-    def __init__(self, tweets_data: dict):
-        self.all_tweets_data = tweets_data.get("globalObjects", {}).get("tweets", {})
-        self.all_tweets: list[Tweet] = []
-        for timeline_entry in tweets_data['timeline']['instructions'][0]['addEntries']['entries']:
-            if timeline_entry['entryId'].startswith('sq-I-t-') or timeline_entry['entryId'].startswith('tweet-'):
-                if 'tweet' in timeline_entry['content']['item']['content']:
-                    _id = timeline_entry['content']['item']['content']['tweet']['id']
-                    # skip the ads
-                    if 'promotedMetadata' in timeline_entry['content']['item']['content']['tweet']:
-                        continue
-
-                elif 'tombstone' in timeline_entry['content']['item']['content'] and 'tweet' in \
-                        timeline_entry['content']['item']['content']['tombstone']:
-                    _id = timeline_entry['content']['item']['content']['tombstone']['tweet']['id']
-                else:
-                    _id = None
+def parse_tweets_data(tweets_data) -> list[Tweet]:
+    tweets = []
+    for timeline_entry in tweets_data['timeline']['instructions'][0]['addEntries']['entries']:
+        if timeline_entry['entryId'].startswith('sq-I-t-') or timeline_entry['entryId'].startswith('tweet-'):
+            if 'tweet' in timeline_entry['content']['item']['content']:
+                _id = timeline_entry['content']['item']['content']['tweet']['id']
+                # skip the ads
+                if 'promotedMetadata' in timeline_entry['content']['item']['content']['tweet']:
                     continue
 
-                tweet_data = tweets_data['globalObjects']['tweets'].get(_id, None)
-                tweet_data['user_data'] = tweets_data['globalObjects']['users'][tweet_data['user_id_str']]
+            elif 'tombstone' in timeline_entry['content']['item']['content'] and 'tweet' in \
+                    timeline_entry['content']['item']['content']['tombstone']:
+                _id = timeline_entry['content']['item']['content']['tombstone']['tweet']['id']
+            else:
+                _id = None
+                continue
 
-                if 'retweeted_status_id_str' in tweet_data:
-                    rt_id = tweet_data['retweeted_status_id_str']
-                    _dt = tweets_data['globalObjects']['tweets'][rt_id]['created_at']
-                    _dt = datetime.datetime.strptime(_dt, '%a %b %d %H:%M:%S %z %Y')
-                    _dt = str(_dt.strftime(Tweet_formats['datetime']))
-                    tweet_data['retweet_data'] = {
-                        'user_rt_id': tweets_data['globalObjects']['tweets'][rt_id]['user_id_str'],
-                        'user_rt': tweets_data['globalObjects']['tweets'][rt_id]['full_text'],
-                        'retweet_id': rt_id,
-                        'retweet_date': _dt,
-                    }
+            tweet_data = tweets_data['globalObjects']['tweets'].get(_id, None)
+            tweet_data['user_data'] = tweets_data['globalObjects']['users'][tweet_data['user_id_str']]
 
-                tweet_obj = Tweet(tweet_data)
-                self.all_tweets.append(tweet_obj)
+            if 'retweeted_status_id_str' in tweet_data:
+                rt_id = tweet_data['retweeted_status_id_str']
+                _dt = tweets_data['globalObjects']['tweets'][rt_id]['created_at']
+                _dt = datetime.datetime.strptime(_dt, '%a %b %d %H:%M:%S %z %Y')
+                _dt = str(_dt.strftime(Tweet_formats['datetime']))
+                tweet_data['retweet_data'] = {
+                    'user_rt_id': tweets_data['globalObjects']['tweets'][rt_id]['user_id_str'],
+                    'user_rt': tweets_data['globalObjects']['tweets'][rt_id]['full_text'],
+                    'retweet_id': rt_id,
+                    'retweet_date': _dt,
+                }
 
-    def __str__(self):
-        return str([str(tweet) for tweet in self.all_tweets])
+            tweet_obj = Tweet(tweet_data)
+            tweets.append(tweet_obj)
 
-    def __repr__(self):
-        return str([str(tweet) for tweet in self.all_tweets])
-
+    return tweets
