@@ -8,7 +8,7 @@ from .tweet_listener import Listener
 from .tweets import parse_tweets_data, Tweet
 from urllib.parse import quote, urlencode
 from fake_useragent import UserAgent
-from static import USER_AGENT_LIST, BEARER, SEARCH_URL
+from .static import USER_AGENT_LIST, BEARER, SEARCH_URL
 from .twitter_user import User
 from .guest_token import Token
 from typing import Union, Optional, Callable, Awaitable
