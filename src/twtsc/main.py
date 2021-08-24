@@ -110,7 +110,7 @@ class Twtsc:
             ('tweet_search_mode', 'live'),  # this can be handled better, maybe take an argument and set it then
         ]
 
-        query = f"from:{user.username}"
+        query = f"from:{user.screen_name}"
         if search_text:
             query += f' {search_text}'
         if until:

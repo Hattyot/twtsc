@@ -1,7 +1,7 @@
 import datetime
 import json
 from time import strftime, localtime
-from twitter_user import User
+from twitter_user import User, BasicUser
 
 Tweet_formats = {
     'datetime': '%Y-%m-%d %H:%M:%S %Z',
@@ -10,17 +10,13 @@ Tweet_formats = {
 }
 
 
-def _get_mentions(tw):
+def _get_mentions(tw) -> list[BasicUser]:
     """
     Extract mentions from tweet
     """
     try:
         mentions = [
-            {
-                'screen_name': _mention['screen_name'],
-                'name': _mention['name'],
-                'id': _mention['id_str'],
-            } for _mention in tw['entities']['user_mentions']
+            BasicUser(_mention) for _mention in tw['entities']['user_mentions']
             if tw['display_text_range'][0] < _mention['indices'][0]
         ]
     except KeyError:
@@ -29,15 +25,11 @@ def _get_mentions(tw):
     return mentions
 
 
-def _get_reply_to(tw):
+def _get_reply_to(tw) -> list[BasicUser]:
     try:
         reply_to = [
-            {
-                'screen_name': _mention['screen_name'],
-                'name': _mention['name'],
-                'id': _mention['id_str'],
-            } for _mention in tw['entities']['user_mentions']
-            if tw['display_text_range'][0] > _mention['indices'][1]
+            BasicUser(_mention) for _mention in tw['entities']['user_mentions']
+            if tw['display_text_range'][0] < _mention['indices'][0]
         ]
     except KeyError:
         reply_to = []
@@ -70,7 +62,6 @@ class Tweet:
         self.datestamp = _dt.strftime(Tweet_formats['datestamp'])
         self.timestamp = _dt.strftime(Tweet_formats['timestamp'])
         self.date = self.datetime
-        self.time = self.timestamp
 
         self.user_id = int(tweet_data["user_id_str"])
         self.name = tweet_data["user_data"]['name']
@@ -111,13 +102,11 @@ class Tweet:
             self.cashtags = []
 
         try:
-            if 'user_rt_id' in tweet_data['retweet_data']:
-                self.retweet = True
-                self.retweet_id = tweet_data['retweet_data']['retweet_id']
-                self.retweet_date = tweet_data['retweet_data']['retweet_date']
-                self.user_rt = tweet_data['retweet_data']['user_rt']
-                self.user_rt_id = tweet_data['retweet_data']['user_rt_id']
-
+            self.retweet = True
+            self.retweet_id = tweet_data['retweet_data']['retweet_id']
+            self.retweet_date = tweet_data['retweet_data']['retweet_date']
+            self.user_rt = tweet_data['retweet_data']['user_rt']
+            self.user_rt_id = tweet_data['retweet_data']['user_rt_id']
         except KeyError:
             self.retweet = False
             self.retweet_id = ''

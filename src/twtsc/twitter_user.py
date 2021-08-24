@@ -1,9 +1,30 @@
 import datetime
 
 
-class User:
-    type = "user"
+class BasicUser:
+    """For reply and mention users."""
+    def __init__(self, user_data: dict):
+        self.id = user_data['id']
+        self.screen_name = user_data['screen_name']
+        self.name = user_data['name']
 
+    def __dict__(self):
+        return {
+            'id': self.id,
+            'screen_name': self.screen_name,
+            'name': self.name
+        }
+
+    def __eq__(self, other):
+        if type(other) == str:
+            return other == self.screen_name or other == self.name or other == str(self.id)
+        if type(other) == int:
+            return other == int(self.id)
+        if type(other) == User or type(other) == User:
+            return other.id == self.id
+
+
+class User:
     def __init__(self, user_data: dict):
         if 'data' not in user_data and 'user' not in user_data['data']:
             msg = 'malformed json! cannot be parsed to get user data'
@@ -17,9 +38,9 @@ class User:
             self.name = ''
 
         try:
-            self.username = user_data['data']['user']['legacy']['screen_name']
+            self.screen_name = user_data['data']['user']['legacy']['screen_name']
         except:
-            self.username = ''
+            self.screen_name = ''
 
         try:
             self.bio = user_data['data']['user']['legacy']['description']
@@ -55,11 +76,11 @@ class User:
         self.background_image = user_data['data']['user']['legacy']['profile_banner_url']
 
         # link to user account
-        self.link = f'https://twitter.com/{self.username}'
+        self.link = f'https://twitter.com/{self.screen_name}'
 
     def __eq__(self, other):
         if type(other) == str:
-            return other == self.username or other == str(self.id)
+            return other == self.screen_name or other == str(self.id)
         if type(other) == int:
             return other == int(self.id)
         if type(other) == User:
