@@ -55,7 +55,7 @@ class Listener:
 
         if new_tweets:
             self.timestamp = int(new_tweets[-1].unix_timestamp) + 1
-            is_await = inspect.iscoroutinefunction(object)
+            is_await = inspect.iscoroutinefunction(self.callback)
             if is_await:
                 await self.callback(new_tweets)
             else:
