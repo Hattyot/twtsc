@@ -26,7 +26,7 @@ class BasicUser:
 
 class User:
     def __init__(self, twtsc, user_data: dict):
-        if 'data' not in user_data and 'user' not in user_data['data']:
+        if 'data' not in user_data or 'user' not in user_data['data']:
             msg = 'malformed json! cannot be parsed to get user data'
             raise Exception(msg)
 
@@ -75,10 +75,17 @@ class User:
         self.is_private = user_data['data']['user']['legacy']['protected']
         self.is_verified = user_data['data']['user']['legacy']['verified']
         self.avatar = user_data['data']['user']['legacy']['profile_image_url_https']
-        self.background_image = user_data['data']['user']['legacy']['profile_banner_url']
+
+        try:
+            self.background_image = user_data['data']['user']['legacy']['profile_banner_url']
+        except:
+            self.background_image = ''
 
         # link to user account
         self.link = f'https://twitter.com/{self.screen_name}'
+
+    def __hash__(self):
+        return hash(self.id)
 
     def __eq__(self, other):
         if type(other) == str:

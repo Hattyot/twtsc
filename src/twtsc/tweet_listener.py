@@ -43,9 +43,9 @@ class Listener:
 
         if last_tweet:
             last_tweet = last_tweet[0]
-            timestamp = last_tweet.unix_timestamp
+            timestamp = int(last_tweet.unix_timestamp) + 1
         else:
-            timestamp = time.time()
+            timestamp = int(time.time())
 
         self.timestamp = timestamp
 

@@ -24,18 +24,6 @@ def _get_mentions(tw) -> list[BasicUser]:
     return mentions
 
 
-def _get_reply_to(tw) -> list[BasicUser]:
-    try:
-        reply_to = [
-            BasicUser(_mention) for _mention in tw['entities']['user_mentions']
-            if tw['display_text_range'][0] < _mention['indices'][0]
-        ]
-    except KeyError:
-        reply_to = []
-
-    return reply_to
-
-
 class Tweet:
     def __init__(self, tweet_data: dict, *, user: User = None):
         self.user = user
@@ -54,9 +42,6 @@ class Tweet:
         self.retweets_count = tweet_data['retweet_count']
         self.likes_count = tweet_data['favorite_count']
 
-        self.username = tweet_data["user_data"]['screen_name']
-        self.link = f"https://twitter.com/{self.username}/status/{self.id}"
-
         self.datetime = str(_dt.strftime(Tweet_formats['datetime']))
         self.datestamp = _dt.strftime(Tweet_formats['datestamp'])
         self.timestamp = _dt.strftime(Tweet_formats['timestamp'])
@@ -64,10 +49,21 @@ class Tweet:
 
         self.user_id = int(tweet_data["user_id_str"])
         self.name = tweet_data["user_data"]['name']
+        self.screen_name = tweet_data["user_data"]['screen_name']
+        self.avatar = tweet_data['user_data']['profile_image_url_https']
+        self.link = f"https://twitter.com/{self.screen_name}/status/{self.id}"
+
         self.place = tweet_data['geo'] if 'geo' in tweet_data and tweet_data['geo'] else ""
         self.timezone = strftime("%z", localtime())
+
         self.mentions = _get_mentions(tweet_data)
-        self.reply_to = _get_reply_to(tweet_data)
+
+        self.retweet_data: Tweet = Tweet(tweet_data['retweet_data']) if 'retweet_data' in tweet_data else None
+        self.retweet = bool(self.retweet_data)
+        self.reply = bool(tweet_data.get('in_reply_to_status_id', None))
+        self.quote_data: Tweet = Tweet(tweet_data['quote_data']) if 'quote_data' in tweet_data else None
+        self.quote = bool(self.quote_data)
+
         try:
             self.urls = [_url['expanded_url'] for _url in tweet_data['entities']['urls']]
         except KeyError:
@@ -99,25 +95,6 @@ class Tweet:
             self.cashtags = [cashtag['text'] for cashtag in tweet_data['entities']['symbols']]
         except KeyError:
             self.cashtags = []
-
-        try:
-            self.retweet = True
-            self.retweet_id = tweet_data['retweet_data']['retweet_id']
-            self.retweet_date = tweet_data['retweet_data']['retweet_date']
-            self.rt_text = tweet_data['retweet_data']['rt_text']
-            self.user_rt_id = tweet_data['retweet_data']['user_rt_id']
-        except KeyError:
-            self.retweet = False
-            self.retweet_id = ''
-            self.retweet_date = ''
-            self.rt_text = ''
-            self.user_rt_id = ''
-
-        try:
-            self.quote_url = tweet_data['quoted_status_permalink']['expanded'] if tweet_data['is_quote_status'] else ''
-        except KeyError:
-            # means that the quoted tweet have been deleted
-            self.quote_url = 0
 
     def __eq__(self, other):
         if type(other) == str:
@@ -154,17 +131,14 @@ def parse_tweets_data(tweets_data) -> list[Tweet]:
             tweet_data = tweets_data['globalObjects']['tweets'].get(_id, None)
             tweet_data['user_data'] = tweets_data['globalObjects']['users'][tweet_data['user_id_str']]
 
+            if 'quoted_status_id_str' in tweet_data:
+                quote_id = tweet_data['quoted_status_id_str']
+                tweet_data['quote_data'] = tweets_data['globalObjects']['tweets'][quote_id]
+                tweet_data['quote_data']['user_data'] = tweets_data['globalObjects']['users'][tweet_data['quote_data']['user_id_str']]
             if 'retweeted_status_id_str' in tweet_data:
                 rt_id = tweet_data['retweeted_status_id_str']
-                _dt = tweets_data['globalObjects']['tweets'][rt_id]['created_at']
-                _dt = datetime.datetime.strptime(_dt, '%a %b %d %H:%M:%S %z %Y')
-                _dt = str(_dt.strftime(Tweet_formats['datetime']))
-                tweet_data['retweet_data'] = {
-                    'user_rt_id': tweets_data['globalObjects']['tweets'][rt_id]['user_id_str'],
-                    'rt_text': tweets_data['globalObjects']['tweets'][rt_id]['full_text'],
-                    'retweet_id': rt_id,
-                    'retweet_date': _dt,
-                }
+                tweet_data['retweet_data'] = tweets_data['globalObjects']['tweets'][rt_id]
+                tweet_data['retweet_data']['user_data'] = tweets_data['globalObjects']['users'][tweet_data['retweet_data']['user_id_str']]
 
             tweet_obj = Tweet(tweet_data)
             tweets.append(tweet_obj)

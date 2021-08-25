@@ -82,12 +82,12 @@ class Twtsc:
                 user, limit, search_text=search_text, until=until, since=since, only_retweets=True
             )
 
-            print(json.dumps(user_retweets, indent=2))
-
             retweets = parse_tweets_data(user_retweets)
             tweets = tweets + retweets
 
         tweets = sorted(tweets, key=lambda tweet: -tweet.unix_timestamp)[:limit]
+        for tweet in tweets:
+            tweet.user = user
 
         return tweets[::-1]
 
@@ -118,9 +118,9 @@ class Twtsc:
         if search_text:
             query += f' {search_text}'
         if until:
-            query += f' until:{until}'
+            query += f' until:{int(until)}'
         if since:
-            query += f' since:{since}'
+            query += f' since:{int(since)}'
         if exclude_retweets:
             query += f' -filter:quote -filter:retweets'
         if only_retweets:
@@ -137,13 +137,12 @@ class Twtsc:
         response = await self.make_request(url_query, headers=_headers)
         return json.loads(response)
 
-
     async def get_user(self, *, username: str = None, user_id: str = None) -> Optional[User]:
         if username:
             url_values = quote(json.dumps({'screen_name': username, 'withHighlightedLabel': False}))
             request_url = f'https://api.twitter.com/graphql/jMaTS-_Ea8vh9rpKggJbCQ/UserByScreenName?variables={url_values}'
         elif user_id:
-            url_values = quote(json.dumps({'userId': user_id, 'withHighlightedLabel': False}))
+            url_values = quote(json.dumps({'userId': str(user_id), 'withHighlightedLabel': False}))
             request_url = f'https://api.twitter.com/graphql/B9FuNQVmyx32rdbIPEZKag/UserByRestId?variables={url_values}'
         else:
             return None
