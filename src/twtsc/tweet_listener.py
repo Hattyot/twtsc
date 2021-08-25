@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 from .twitter_user import User
 from typing import Callable, Union, Awaitable
@@ -36,7 +37,7 @@ class Listener:
             await self.new_tweets()
             end = time.time()
 
-            await asyncio.sleep(self.interval - (end - start))
+            await asyncio.sleep(self.interval - (end - start) + (random.randint(-5, 5)))
 
     async def get_last_tweet_timestamp(self):
         last_tweet = await self.twtsc.search_user_tweets(self.user, limit=1)
