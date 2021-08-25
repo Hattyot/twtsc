@@ -30,14 +30,17 @@ class Listener:
 
     async def runner(self):
         while not self.stop_event.is_set():
-            start = time.time()
-            if not self.timestamp:
-                await self.get_last_tweet_timestamp()
+            try:
+                start = time.time()
+                if not self.timestamp:
+                    await self.get_last_tweet_timestamp()
 
-            await self.new_tweets()
-            end = time.time()
+                await self.new_tweets()
+                end = time.time()
 
-            await asyncio.sleep(self.interval - (end - start) + (random.randint(-5, 5)))
+                await asyncio.sleep(self.interval - (end - start) + (random.randint(-5, 5)))
+            except:
+                await asyncio.sleep(self.interval + (random.randint(-5, 5)))
 
     async def get_last_tweet_timestamp(self):
         last_tweet = await self.twtsc.search_user_tweets(self.user, limit=1)
