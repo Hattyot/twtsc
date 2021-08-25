@@ -24,6 +24,14 @@ def _get_mentions(tw) -> list[BasicUser]:
     return mentions
 
 
+class Card:
+    def __init__(self, card_data: dict):
+        self.url = card_data['url']
+        self.description = card_data['binding_values']['description']['string_value']
+        self.title = card_data['binding_values']['title']['string_value']
+        self.thumbnail = card_data['binding_values']['thumbnail_image_large']['image_value']['url']
+
+
 class Tweet:
     def __init__(self, tweet_data: dict, *, user: User = None):
         self.user = user
@@ -63,6 +71,8 @@ class Tweet:
         self.reply = bool(tweet_data.get('in_reply_to_status_id', None))
         self.quote_data: Tweet = Tweet(tweet_data['quote_data']) if 'quote_data' in tweet_data else None
         self.quote = bool(self.quote_data)
+
+        self.card_data: Card = Card(tweet_data.get('card')) if 'card' in tweet_data else None
 
         try:
             self.urls = [_url['expanded_url'] for _url in tweet_data['entities']['urls']]
@@ -134,11 +144,13 @@ def parse_tweets_data(tweets_data) -> list[Tweet]:
             if 'quoted_status_id_str' in tweet_data:
                 quote_id = tweet_data['quoted_status_id_str']
                 tweet_data['quote_data'] = tweets_data['globalObjects']['tweets'][quote_id]
-                tweet_data['quote_data']['user_data'] = tweets_data['globalObjects']['users'][tweet_data['quote_data']['user_id_str']]
+                tweet_data['quote_data']['user_data'] = tweets_data['globalObjects']['users'][
+                    tweet_data['quote_data']['user_id_str']]
             if 'retweeted_status_id_str' in tweet_data:
                 rt_id = tweet_data['retweeted_status_id_str']
                 tweet_data['retweet_data'] = tweets_data['globalObjects']['tweets'][rt_id]
-                tweet_data['retweet_data']['user_data'] = tweets_data['globalObjects']['users'][tweet_data['retweet_data']['user_id_str']]
+                tweet_data['retweet_data']['user_data'] = tweets_data['globalObjects']['users'][
+                    tweet_data['retweet_data']['user_id_str']]
 
             tweet_obj = Tweet(tweet_data)
             tweets.append(tweet_obj)

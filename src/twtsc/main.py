@@ -102,6 +102,8 @@ class Twtsc:
             ('include_ext_alt_text', 'true'),
             ('include_quote_count', 'true'),
             ('include_reply_count', '1'),
+            ('include_cards', '1'),
+            ('cards_platform', 'Web-12'),
             ('tweet_mode', 'extended'),
             ('include_entities', 'true'),
             ('include_user_entities', 'true'),
