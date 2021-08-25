@@ -27,9 +27,14 @@ def _get_mentions(tw) -> list[BasicUser]:
 class Card:
     def __init__(self, card_data: dict):
         self.url = card_data['url']
-        self.description = card_data['binding_values']['description']['string_value']
-        self.title = card_data['binding_values']['title']['string_value']
-        self.thumbnail = card_data['binding_values']['thumbnail_image_large']['image_value']['url']
+        try:
+            self.description = card_data['binding_values']['description']['string_value']
+            self.title = card_data['binding_values']['title']['string_value']
+            self.thumbnail = card_data['binding_values']['thumbnail_image_large']['image_value']['url']
+        except:
+            self.description = ''
+            self.title = ''
+            self.thumbnail = ''
 
 
 class Tweet:
