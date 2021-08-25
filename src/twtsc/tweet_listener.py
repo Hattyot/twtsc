@@ -53,7 +53,7 @@ class Listener:
         new_tweets = await self.twtsc.search_user_tweets(self.user, since=self.timestamp)
 
         if new_tweets:
-            self.timestamp = new_tweets[-1].unix_timestamp
+            self.timestamp = int(new_tweets[-1].unix_timestamp) + 1
             is_await = inspect.iscoroutinefunction(object)
             if is_await:
                 await self.callback(new_tweets)
