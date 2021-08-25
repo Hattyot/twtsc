@@ -89,7 +89,7 @@ class User:
 
     def __eq__(self, other):
         if type(other) == str:
-            return other == self.screen_name or other == str(self.id)
+            return other == self.screen_name or other == self.name or other == str(self.id)
         if type(other) == int:
             return other == int(self.id)
         if type(other) == User:
