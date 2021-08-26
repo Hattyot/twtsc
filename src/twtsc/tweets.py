@@ -128,36 +128,39 @@ class Tweet:
 
 def parse_tweets_data(tweets_data) -> list[Tweet]:
     tweets = []
-    for timeline_entry in tweets_data['timeline']['instructions'][0]['addEntries']['entries']:
-        if timeline_entry['entryId'].startswith('sq-I-t-') or timeline_entry['entryId'].startswith('tweet-'):
-            if 'tweet' in timeline_entry['content']['item']['content']:
-                _id = timeline_entry['content']['item']['content']['tweet']['id']
-                # skip the ads
-                if 'promotedMetadata' in timeline_entry['content']['item']['content']['tweet']:
+    try:
+        for timeline_entry in tweets_data['timeline']['instructions'][0]['addEntries']['entries']:
+            if timeline_entry['entryId'].startswith('sq-I-t-') or timeline_entry['entryId'].startswith('tweet-'):
+                if 'tweet' in timeline_entry['content']['item']['content']:
+                    _id = timeline_entry['content']['item']['content']['tweet']['id']
+                    # skip the ads
+                    if 'promotedMetadata' in timeline_entry['content']['item']['content']['tweet']:
+                        continue
+
+                elif 'tombstone' in timeline_entry['content']['item']['content'] and 'tweet' in \
+                        timeline_entry['content']['item']['content']['tombstone']:
+                    _id = timeline_entry['content']['item']['content']['tombstone']['tweet']['id']
+                else:
+                    _id = None
                     continue
 
-            elif 'tombstone' in timeline_entry['content']['item']['content'] and 'tweet' in \
-                    timeline_entry['content']['item']['content']['tombstone']:
-                _id = timeline_entry['content']['item']['content']['tombstone']['tweet']['id']
-            else:
-                _id = None
-                continue
+                tweet_data = tweets_data['globalObjects']['tweets'].get(_id, None)
+                tweet_data['user_data'] = tweets_data['globalObjects']['users'][tweet_data['user_id_str']]
 
-            tweet_data = tweets_data['globalObjects']['tweets'].get(_id, None)
-            tweet_data['user_data'] = tweets_data['globalObjects']['users'][tweet_data['user_id_str']]
+                if 'quoted_status_id_str' in tweet_data:
+                    quote_id = tweet_data['quoted_status_id_str']
+                    tweet_data['quote_data'] = tweets_data['globalObjects']['tweets'][quote_id]
+                    tweet_data['quote_data']['user_data'] = tweets_data['globalObjects']['users'][
+                        tweet_data['quote_data']['user_id_str']]
+                if 'retweeted_status_id_str' in tweet_data:
+                    rt_id = tweet_data['retweeted_status_id_str']
+                    tweet_data['retweet_data'] = tweets_data['globalObjects']['tweets'][rt_id]
+                    tweet_data['retweet_data']['user_data'] = tweets_data['globalObjects']['users'][
+                        tweet_data['retweet_data']['user_id_str']]
 
-            if 'quoted_status_id_str' in tweet_data:
-                quote_id = tweet_data['quoted_status_id_str']
-                tweet_data['quote_data'] = tweets_data['globalObjects']['tweets'][quote_id]
-                tweet_data['quote_data']['user_data'] = tweets_data['globalObjects']['users'][
-                    tweet_data['quote_data']['user_id_str']]
-            if 'retweeted_status_id_str' in tweet_data:
-                rt_id = tweet_data['retweeted_status_id_str']
-                tweet_data['retweet_data'] = tweets_data['globalObjects']['tweets'][rt_id]
-                tweet_data['retweet_data']['user_data'] = tweets_data['globalObjects']['users'][
-                    tweet_data['retweet_data']['user_id_str']]
-
-            tweet_obj = Tweet(tweet_data)
-            tweets.append(tweet_obj)
+                tweet_obj = Tweet(tweet_data)
+                tweets.append(tweet_obj)
+    except:
+        pass
 
     return tweets
