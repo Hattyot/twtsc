@@ -1,6 +1,7 @@
 import asyncio
 import random
 
+from .tweets import ParseError
 from .twitter_user import User
 from typing import Callable, Union, Awaitable
 import inspect
@@ -39,6 +40,8 @@ class Listener:
                 end = time.time()
 
                 await asyncio.sleep(self.interval - (end - start) + (random.randint(-5, 5)))
+            except ParseError:
+                self.timestamp = time.time()
             except Exception as e:
                 print('ERROR in runner', e)
                 await asyncio.sleep(self.interval + (random.randint(-5, 5)))

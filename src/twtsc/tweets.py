@@ -2,6 +2,12 @@ import datetime
 from time import strftime, localtime
 from .twitter_user import User, BasicUser
 
+
+class ParseError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
 Tweet_formats = {
     'datetime': '%Y-%m-%d %H:%M:%S %Z',
     'datestamp': '%Y-%m-%d',
@@ -161,6 +167,6 @@ def parse_tweets_data(tweets_data) -> list[Tweet]:
                 tweet_obj = Tweet(tweet_data)
                 tweets.append(tweet_obj)
     except:
-        pass
+        raise ParseError('Error parsing tweets data')
 
     return tweets
