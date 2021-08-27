@@ -39,7 +39,8 @@ class Listener:
                 end = time.time()
 
                 await asyncio.sleep(self.interval - (end - start) + (random.randint(-5, 5)))
-            except:
+            except Exception as e:
+                print('ERROR in runner', e)
                 await asyncio.sleep(self.interval + (random.randint(-5, 5)))
 
     async def get_last_tweet_timestamp(self):
