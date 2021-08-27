@@ -167,6 +167,7 @@ def parse_tweets_data(tweets_data) -> list[Tweet]:
                 tweet_obj = Tweet(tweet_data)
                 tweets.append(tweet_obj)
     except:
+        print(tweets_data)
         raise ParseError('Error parsing tweets data')
 
     return tweets
