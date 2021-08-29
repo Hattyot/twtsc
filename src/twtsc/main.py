@@ -52,6 +52,7 @@ class Twtsc:
                 resp = await response.text()
                 if response.status == 429:  # Rate Limit Exceeded
                     self.token.refresh()
+                    headers['x-guest-token'] = self.token.token
                     return await self.make_request(url, headers=headers)
 
                 return resp
